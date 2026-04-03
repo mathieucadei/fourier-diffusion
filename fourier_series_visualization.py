@@ -51,7 +51,7 @@ def compute_fourier_series_terms(frequency_indices, fourier_coefficients_array, 
 
 
 def compute_fourier_series(fourier_series_terms):
-    return np.sum(fourier_series_terms, axis=1)
+    return np.cumsum(fourier_series_terms, axis=1).T
 
 
 def plot_signals(time_array, original_signal, fourier_signals=None, title="Signal vs time", x_label="Time", y_label="Amplitude"):
@@ -85,7 +85,8 @@ def plot_signals(time_array, original_signal, fourier_signals=None, title="Signa
                     plt.plot(time_array, y, color=cmap(norm(i)))
                 
                 sm = cm.ScalarMappable(norm=norm, cmap=cmap)
-                plt.colorbar(sm, label="Frequency")
+                ax = plt.gca()  # Get current axes
+                plt.colorbar(sm, ax=ax, label="Frequency")
 
     plt.xlabel(x_label)
     plt.ylabel(y_label)
@@ -246,31 +247,4 @@ if __name__ == "__main__":
 
     fourier_series_array = compute_fourier_series(fourier_series_terms)
 
-    print(fourier_series_array)
-
     plot_signals(time_array, signal_values, fourier_series_array)
-
-    # fourier_series_array_list = []
-    # labels_list = []    
-
-    # for i in range(0,51,1):
-
-    #     num_frequencies = i
-    #     frequency_indices = generate_frequency_indices(num_frequencies)
-    #     fourier_coefficients = compute_fourier_coefficients(signal_values, time_array, frequency_indices)
-
-    #     time_value_array = np.linspace(0, 1, 101)
-
-    #     fourier_series_array = []
-
-    #     labels_list.append(f"n = {i}")
-
-    #     for j in time_value_array:
-    #         fourier_series_term_array = compute_fourier_series_terms(frequency_indices, fourier_coefficients, time_value=j)
-    #         fourier_series_array.append(compute_fourier_series(fourier_series_term_array))
-        
-    #     fourier_series_array_list.append(fourier_series_array)
-
-    # fourier_series_array_list[-1], labels_list
-
-    # plot_signals(time_array, signal_values, fourier_series_array_list)

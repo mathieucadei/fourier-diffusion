@@ -6,8 +6,6 @@ from matplotlib.ticker import FuncFormatter
 from matplotlib import cm, colors
 from matplotlib.animation import FuncAnimation
 import os
-from pathlib import Path
-import sys
 
 def generate_step_signal(x_array, domain_length=1):
 
@@ -245,58 +243,72 @@ def plot_fourier_series_terms(fourier_series_terms, dx=25, animate=False):
         plt.show()
 
 
-def plot_heat_equation_solution(x_array, time_array, heat_equation_solution):
+def plot_heat_equation_solution(x_array, time_array, heat_equation_solution, animate=False):
 
-    fig = plt.figure(figsize=(11, 7), dpi=100)
-    ax = fig.add_subplot(projection='3d') 
-    x = x_array
-    y = time_array
-    X, Y = np.meshgrid(x, y)
+    if animate is False:
 
-    surf = ax.plot_surface(
-    X,
-    Y,
-    heat_equation_solution,
-    cmap=cm.viridis
-    )
-    ax.set_xlabel("x")
-    ax.set_ylabel("t")
-    ax.set_zlabel("z")
+        fig = plt.figure(figsize=(11, 7), dpi=100)
+        ax = fig.add_subplot(projection='3d') 
+        x = x_array
+        y = time_array
+        X, Y = np.meshgrid(x, y)
 
-    plt.show()
+        surf = ax.plot_surface(
+        X,
+        Y,
+        heat_equation_solution,
+        cmap=cm.viridis
+        )
+        ax.set_xlabel("x")
+        ax.set_ylabel("t")
+        ax.set_zlabel("z")
+
+        plt.show()
+    
+    else:
+        fig, ax = plt.subplots(figsize=(10, 6))
+        line, = ax.plot(x_array, heat_equation_solution[0], lw=2)
+
+        ax.set_xlabel("x")
+        ax.set_ylabel("u", rotation=0)
+        ax.set_title("Heat Equation Solution")
+
+        def update(frame):
+
+            line.set_ydata(heat_equation_solution[frame])
+
+            ax.set_title(f"Time: {time_array[frame]:.2f}")
+
+            return line,
+
+        ani = FuncAnimation(fig, update, frames=len(time_array), interval=100, blit=False)
+
+        os.makedirs('animations', exist_ok=True)
+        variable_name = "heat_equation_solution"
+        ani.save(f'animations/{variable_name}.mp4', writer="ffmpeg")
+
+        plt.show()
 
 
 
 if __name__ == "__main__":
 
     x_array = np.linspace(0, 1, 1001, endpoint=False)
-    signal_values = generate_step_signal(x_array)
-
-    # plot_signals(x_array, signal_values)
-
     num_frequencies = 500
-    frequency_indices = generate_frequency_indices(num_frequencies)
-
-    fourier_coefficients = compute_fourier_coefficients(signal_values, x_array, frequency_indices)
-
-    fourier_series_terms = compute_fourier_series_terms(frequency_indices, fourier_coefficients, x_array)
-
-    # plot_fourier_series_terms(fourier_series_terms, dx=35)
-
-    # plot_fourier_series_terms(fourier_series_terms, animate=True)
-
-    fourier_series_array = compute_fourier_series(fourier_series_terms)
-
-    # plot_signals(x_array, signal_values, fourier_series_array)
-
-    # plot_signals(x_array, signal_values, fourier_series_array[-1])
-
     time_array = np.linspace(0, 1, 1001, endpoint=False)
-
     nu = 0.05
 
+    signal_values = generate_step_signal(x_array)
+    frequency_indices = generate_frequency_indices(num_frequencies)
+    fourier_coefficients = compute_fourier_coefficients(signal_values, x_array, frequency_indices)
+    fourier_series_terms = compute_fourier_series_terms(frequency_indices, fourier_coefficients, x_array)
+    fourier_series_array = compute_fourier_series(fourier_series_terms)
     heat_equation_solution = compute_heat_equation_solution(fourier_series_terms, frequency_indices, time_array, nu)
 
-    plot_heat_equation_solution(x_array, time_array, heat_equation_solution)
-
-    # heat_equation_solution = np.exp(-nu * 4 * np.pi**2 * frequency_indices[:, None]**2 * time_array[None, :]) * fourier_series_array
+    # plot_signals(x_array, signal_values)
+    # plot_fourier_series_terms(fourier_series_terms, dx=35)
+    # plot_fourier_series_terms(fourier_series_terms, animate=True)
+    # plot_signals(x_array, signal_values, fourier_series_array)
+    # plot_signals(x_array, signal_values, fourier_series_array[-1])
+    plot_heat_equation_solution(x_array, time_array, heat_equation_solution, animate=False)
+    plot_heat_equation_solution(x_array, time_array, heat_equation_solution, animate=True)

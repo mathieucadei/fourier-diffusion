@@ -5,6 +5,9 @@ from matplotlib.patches import Circle
 from matplotlib.ticker import FuncFormatter
 from matplotlib import cm, colors
 from matplotlib.animation import FuncAnimation
+import os
+from pathlib import Path
+import sys
 
 def generate_step_signal(x_array, domain_length=1):
 
@@ -225,14 +228,21 @@ def plot_fourier_series_terms(fourier_series_terms, dx=25, animate=False):
         
         ani = FuncAnimation(fig, update, frames=len(fourier_series_terms), interval=100, blit=False)
 
+        os.makedirs("animations", exist_ok=True)
+
+        variable_name = "fourier_series_terms"
+        script_name = Path(__file__).stem
+
+        ani.save(f"animations/{variable_name}.mp4", writer="ffmpeg")
+
         plt.show()
 
 if __name__ == "__main__":
 
-    x_array = np.linspace(0, 1, 1000, endpoint=False)
+    x_array = np.linspace(0, 1, 1001, endpoint=False)
     signal_values = generate_step_signal(x_array)
 
-    # plot_signals(x_array, signal_values)
+    plot_signals(x_array, signal_values)
 
     num_frequencies = 500
     frequency_indices = generate_frequency_indices(num_frequencies)
@@ -241,9 +251,9 @@ if __name__ == "__main__":
 
     fourier_series_terms = compute_fourier_series_terms(frequency_indices, fourier_coefficients, x_array)
 
-    # plot_fourier_series_terms(fourier_series_terms, dx=35)
+    plot_fourier_series_terms(fourier_series_terms, dx=35)
 
-    # plot_fourier_series_terms(fourier_series_terms, animate=True)
+    plot_fourier_series_terms(fourier_series_terms, animate=True)
 
     fourier_series_array = compute_fourier_series(fourier_series_terms)
 
@@ -251,26 +261,40 @@ if __name__ == "__main__":
 
     plot_signals(x_array, signal_values, fourier_series_array[-1])
 
-    # initial_solution = fourier_series_array[-1]
+    time_array = np.linspace(0, 1, 1001, endpoint=False)
 
-    # nu = 0.1
+    nu = 0.05
 
-    # heat_equation_solution = np.exp(-nu * 4 * np.pi**2 * frequency_indices * x_array[:, None]) * initial_solution
+    # heat_equation_solution = np.exp(-nu * 4 * np.pi**2 * frequency_indices[:, None]**2 * time_array[None, :]) * fourier_series_array
 
-    # fig = plt.figure(figsize=(11, 7), dpi=100)
-    # ax = fig.add_subplot(projection='3d') 
-    # x = x_array
-    # y = time_array
-    # X, Y = np.meshgrid(x, y)
+    k = frequency_indices[None, None, :]          # shape (1, 1, n_k)
+    x = x_array[None, :, None]                    # shape (1, n_x, 1)
+    t = time_array[:, None, None]                 # shape (n_t, 1, 1)
+    c_k = fourier_coefficients[None, None, :]     # shape (1, 1, n_k)
 
-    # surf = ax.plot_surface(
-    # X,
-    # Y,
-    # heat_equation_solution,
-    # cmap=cm.viridis
-    # )
-    # ax.set_xlabel("x")
-    # ax.set_ylabel("t")
-    # ax.set_zlabel("z")
+    heat_equation_solution = np.sum(
+        c_k
+        * np.exp(2j * np.pi * k * x)
+        * np.exp(-nu * (2 * np.pi * k)**2 * t),
+        axis=2
+    ).real
 
-    # plt.show()
+
+
+    fig = plt.figure(figsize=(11, 7), dpi=100)
+    ax = fig.add_subplot(projection='3d') 
+    x = x_array
+    y = time_array
+    X, Y = np.meshgrid(x, y)
+
+    surf = ax.plot_surface(
+    X,
+    Y,
+    heat_equation_solution,
+    cmap=cm.viridis
+    )
+    ax.set_xlabel("x")
+    ax.set_ylabel("t")
+    ax.set_zlabel("z")
+
+    plt.show()

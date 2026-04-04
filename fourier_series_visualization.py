@@ -57,6 +57,14 @@ def compute_fourier_series(fourier_series_terms):
     return np.cumsum(fourier_series_terms, axis=1).T
 
 
+def compute_heat_equation_solution(fourier_series_terms, frequency_indices, time_array, nu):
+    return np.sum(
+        fourier_series_terms[None, :, :]
+        * np.exp(-nu * (2 * np.pi * frequency_indices[None, None, :])**2 * time_array[:, None, None]),
+        axis=2
+    ).real
+
+
 def plot_signals(x_array, original_signal, fourier_signals=None, title="Signal vs x", x_label="x", y_label="Amplitude"):
     """
     x_array: 1D array of x values.
@@ -231,55 +239,13 @@ def plot_fourier_series_terms(fourier_series_terms, dx=25, animate=False):
         os.makedirs("animations", exist_ok=True)
 
         variable_name = "fourier_series_terms"
-        script_name = Path(__file__).stem
 
         ani.save(f"animations/{variable_name}.mp4", writer="ffmpeg")
 
         plt.show()
 
-if __name__ == "__main__":
 
-    x_array = np.linspace(0, 1, 1001, endpoint=False)
-    signal_values = generate_step_signal(x_array)
-
-    plot_signals(x_array, signal_values)
-
-    num_frequencies = 500
-    frequency_indices = generate_frequency_indices(num_frequencies)
-
-    fourier_coefficients = compute_fourier_coefficients(signal_values, x_array, frequency_indices)
-
-    fourier_series_terms = compute_fourier_series_terms(frequency_indices, fourier_coefficients, x_array)
-
-    plot_fourier_series_terms(fourier_series_terms, dx=35)
-
-    plot_fourier_series_terms(fourier_series_terms, animate=True)
-
-    fourier_series_array = compute_fourier_series(fourier_series_terms)
-
-    plot_signals(x_array, signal_values, fourier_series_array)
-
-    plot_signals(x_array, signal_values, fourier_series_array[-1])
-
-    time_array = np.linspace(0, 1, 1001, endpoint=False)
-
-    nu = 0.05
-
-    # heat_equation_solution = np.exp(-nu * 4 * np.pi**2 * frequency_indices[:, None]**2 * time_array[None, :]) * fourier_series_array
-
-    k = frequency_indices[None, None, :]          # shape (1, 1, n_k)
-    x = x_array[None, :, None]                    # shape (1, n_x, 1)
-    t = time_array[:, None, None]                 # shape (n_t, 1, 1)
-    c_k = fourier_coefficients[None, None, :]     # shape (1, 1, n_k)
-
-    heat_equation_solution = np.sum(
-        c_k
-        * np.exp(2j * np.pi * k * x)
-        * np.exp(-nu * (2 * np.pi * k)**2 * t),
-        axis=2
-    ).real
-
-
+def plot_heat_equation_solution(x_array, time_array, heat_equation_solution):
 
     fig = plt.figure(figsize=(11, 7), dpi=100)
     ax = fig.add_subplot(projection='3d') 
@@ -298,3 +264,39 @@ if __name__ == "__main__":
     ax.set_zlabel("z")
 
     plt.show()
+
+
+
+if __name__ == "__main__":
+
+    x_array = np.linspace(0, 1, 1001, endpoint=False)
+    signal_values = generate_step_signal(x_array)
+
+    # plot_signals(x_array, signal_values)
+
+    num_frequencies = 500
+    frequency_indices = generate_frequency_indices(num_frequencies)
+
+    fourier_coefficients = compute_fourier_coefficients(signal_values, x_array, frequency_indices)
+
+    fourier_series_terms = compute_fourier_series_terms(frequency_indices, fourier_coefficients, x_array)
+
+    # plot_fourier_series_terms(fourier_series_terms, dx=35)
+
+    # plot_fourier_series_terms(fourier_series_terms, animate=True)
+
+    fourier_series_array = compute_fourier_series(fourier_series_terms)
+
+    # plot_signals(x_array, signal_values, fourier_series_array)
+
+    # plot_signals(x_array, signal_values, fourier_series_array[-1])
+
+    time_array = np.linspace(0, 1, 1001, endpoint=False)
+
+    nu = 0.05
+
+    heat_equation_solution = compute_heat_equation_solution(fourier_series_terms, frequency_indices, time_array, nu)
+
+    plot_heat_equation_solution(x_array, time_array, heat_equation_solution)
+
+    # heat_equation_solution = np.exp(-nu * 4 * np.pi**2 * frequency_indices[:, None]**2 * time_array[None, :]) * fourier_series_array

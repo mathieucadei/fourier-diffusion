@@ -17,39 +17,60 @@ def generate_step_signal(x_array, domain_length=1):
     return signal_values
 
 
-def generate_frequency_indices(num_frequencies):
+def generate_mode_indices(num_modes, basis="periodic"):
 
-    frequency_indices = np.empty(2 * num_frequencies + 1)   # make an empty array of the right length
+    if basis == "periodic":
 
-    frequency_indices[0] = 0                              # first value is 0
-    positive_indices = np.arange(1, num_frequencies + 1)   # [1, 2, 3, ..., num_frequencies]
+        mode_indices = np.empty(2 * num_modes + 1, dtype=int)   # make an empty array of the right length
+        mode_indices[0] = 0                                     # first value is 0
+        
+        positive_indices = np.arange(1, num_modes + 1)          # [1, 2, 3, ..., num_modes]
 
-    frequency_indices[1::2] = positive_indices                           # put positives at positions 1,3,5,...
-    frequency_indices[2::2] = -positive_indices                          # put negatives at positions 2,4,6,...
+        mode_indices[1::2] = positive_indices                   # put positives at positions 1,3,5,...
+        mode_indices[2::2] = -positive_indices                  # put negatives at positions 2,4,6,...
     
-    return frequency_indices
+        return mode_indices
+
+    elif basis == "cosine":
+        return np.arange(0, num_modes + 1, dtype=int)
+    
+    else:
+        raise ValueError("basis must be 'periodic' or 'cosine'")
 
 
-def compute_fourier_coefficients(signal_values, x_array, frequency_indices):
+def compute_coefficients(signal_values, x_array, mode_indices, basis="periodic"):
 
     dx = x_array[1] - x_array[0]
 
     x_row = x_array[None, :]
-    frequency_column = frequency_indices[:, None]
+    mode_column = mode_indices[:, None]
 
-    complex_exponential = np.exp(
-        -2 * np.pi * 1j * frequency_column * x_row
-    )
+    if basis == "periodic":
+        basis_matrix  = np.exp(
+            -2j * np.pi * mode_column * x_row
+        )
+    
+    elif basis == "cosine":
+        basis_matrix = np.cos(np.pi * mode_column * x_row)
 
-    return (signal_values * complex_exponential).sum(axis=1) * dx
+    else:
+        raise ValueError("basis must be 'periodic' or 'cosine'")
+    
+    return (signal_values * basis_matrix).sum(axis=1) * dx
 
 
-def compute_fourier_series_terms(frequency_indices, fourier_coefficients_array, x_array):
+def compute__series_terms(mode_indices, coefficients_array, x_array, basis="periodic"):
 
     x_column = x_array[:, None]
 
-    return fourier_coefficients_array*np.exp(frequency_indices*2*np.pi*1j*x_column)
+    if basis == "periodic":
+        return coefficients_array*np.exp(mode_indices * 2j * np.pi * x_column)
+    
+    elif basis == "cosine":
+        return coefficients_array*np.cos(np.pi * mode_indices * x_column)
 
+    else:
+        raise ValueError("basis must be 'periodic' or 'cosine'")
 
 def compute_fourier_series(fourier_series_terms):
     return np.cumsum(fourier_series_terms, axis=1).T
@@ -310,5 +331,5 @@ if __name__ == "__main__":
     # plot_fourier_series_terms(fourier_series_terms, animate=True)
     # plot_signals(x_array, signal_values, fourier_series_array)
     # plot_signals(x_array, signal_values, fourier_series_array[-1])
-    plot_heat_equation_solution(x_array, time_array, heat_equation_solution, animate=False)
-    plot_heat_equation_solution(x_array, time_array, heat_equation_solution, animate=True)
+    # plot_heat_equation_solution(x_array, time_array, heat_equation_solution, animate=False)
+    # plot_heat_equation_solution(x_array, time_array, heat_equation_solution, animate=True)

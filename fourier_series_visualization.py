@@ -59,7 +59,7 @@ def compute_coefficients(signal_values, x_array, mode_indices, basis="periodic")
     return (signal_values * basis_matrix).sum(axis=1) * dx
 
 
-def compute__series_terms(mode_indices, coefficients_array, x_array, basis="periodic"):
+def compute_series_terms(mode_indices, coefficients_array, x_array, basis="periodic"):
 
     x_column = x_array[:, None]
 
@@ -72,16 +72,26 @@ def compute__series_terms(mode_indices, coefficients_array, x_array, basis="peri
     else:
         raise ValueError("basis must be 'periodic' or 'cosine'")
 
-def compute_fourier_series(fourier_series_terms):
-    return np.cumsum(fourier_series_terms, axis=1).T
+
+def compute_series(series_terms):
+    return np.cumsum(series_terms, axis=1).T
 
 
-def compute_heat_equation_solution(fourier_series_terms, frequency_indices, time_array, nu):
-    return np.sum(
-        fourier_series_terms[None, :, :]
-        * np.exp(-nu * (2 * np.pi * frequency_indices[None, None, :])**2 * time_array[:, None, None]),
-        axis=2
-    ).real
+def compute_heat_equation_solution(series_terms, mode_indices, time_array, nu, basis="periodic"):
+    
+    t = time_array[:, None, None]
+    n = mode_indices[None, None, :]
+
+    if basis == "periodic":
+        decay = np.exp(-nu * ((2 * np.pi * n)**2 * t))
+    
+    elif basis == "cosine":
+        decay = np.exp(-nu * ((np.pi * n)**2 * t))
+    
+    else:
+        raise ValueError("basis must be 'periodic' or 'cosine'")
+
+    return np.sum(series_terms[None, :, :] * decay, axis=2).real
 
 
 def plot_signals(x_array, original_signal, fourier_signals=None, title="Signal vs x", x_label="x", y_label="Amplitude"):

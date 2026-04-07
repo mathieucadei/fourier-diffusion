@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
 from matplotlib.ticker import FuncFormatter
@@ -96,7 +95,7 @@ def compute_heat_equation_solution(series_terms, mode_indices, time_array, nu, b
     return np.sum(series_terms[None, :, :] * decay, axis=2).real
 
 
-def plot_signals(x_array, original_signal, series_signals=None, title="Signal vs x", x_label="x", y_label="Amplitude"):
+def plot_signals(x_array, original_signal, series_signals=None, title="Signal vs Position", x_label="Position", y_label="Amplitude"):
 
     plt.figure(figsize=(20, 12))
 
@@ -111,7 +110,7 @@ def plot_signals(x_array, original_signal, series_signals=None, title="Signal vs
             cmap = cm.plasma
 
             if n == 1:
-                plt.plot(x_array, series_signals[0], label="Fourier Signal")
+                plt.plot(x_array, series_signals[0], label="Series Signal")
 
             else:
                 norm = colors.Normalize(vmin=0, vmax=n-1)  
@@ -128,6 +127,10 @@ def plot_signals(x_array, original_signal, series_signals=None, title="Signal vs
     plt.title(title)
     plt.legend()
     plt.tight_layout()
+
+    os.makedirs('figures', exist_ok=True)
+    variable_name = f"series_signals"
+    plt.savefig(f'figures/{variable_name}.png')
 
     plt.show()
 
@@ -189,7 +192,11 @@ def plot_epicycles(series_terms, dx=25, animate=False):
             )
             ax.add_patch(circle)
 
-        fig.suptitle(f"Epicycles @Time Step={dx}")
+        fig.suptitle(f"Epicycles @Time={dx}")
+
+        os.makedirs('figures', exist_ok=True)
+        variable_name = f"epicycles"
+        fig.savefig(f'figures/{variable_name}.png')
 
         plt.show()
         
@@ -260,16 +267,13 @@ def plot_epicycles(series_terms, dx=25, animate=False):
             for ci, circle in zip(centers, circles):
                 circle.center = (ci)
             
-            ax.set_title(f"Epicycles @Time Step={frame}")
+            ax.set_title(f"Epicycles @Time={frame}")
 
             return (qvr, *circles)
         
         ani = FuncAnimation(fig, update, frames=len(series_terms), interval=100, blit=False)
-
         os.makedirs("animations", exist_ok=True)
-
-        variable_name = "epycicles"
-
+        variable_name = "epicycles"
         ani.save(f"animations/{variable_name}.mp4", writer="ffmpeg")
 
         plt.show()
@@ -285,39 +289,73 @@ def plot_heat_equation_solution(x_array, time_array, heat_equation_solution, bas
         y = time_array
         X, Y = np.meshgrid(x, y)
 
-        ax.plot_surface(
+        surf = ax.plot_surface(
         X,
         Y,
         heat_equation_solution,
         cmap=cm.coolwarm
         )
-        ax.set_xlabel("x")
-        ax.set_ylabel("t")
-        ax.set_zlabel("z")
+
+        ax.set_xlabel("Position")
+        ax.set_ylabel("Time")
+        ax.set_zlabel("Temperature")
+
+        ax.set_title(f"Temperature profile ({basis} initial condition)")
+
+        fig.colorbar(surf, ax=ax)
+
+        os.makedirs('figures', exist_ok=True)
+        variable_name = f"temperature_profile_{basis}"
+        fig.savefig(f'figures/{variable_name}.png')
 
         plt.show()
     
     else:
 
         fig, ax = plt.subplots(figsize=(10, 6))
-        line, = ax.plot(x_array, heat_equation_solution[0], lw=2)
 
-        ax.set_xlabel("x")
-        ax.set_ylabel("u", rotation=0)
-        ax.set_title(f"Heat Equation Solution {basis}")
+        y0 = heat_equation_solution[0]
+
+        points = np.array([x_array, y0]).T
+        segments = np.stack([points[:-1], points[1:]], axis=1)
+
+        lc = LineCollection(segments, cmap='coolwarm')
+        lc.set_array(y0)
+        lc.set_linewidth(2)
+
+        vmax = np.max(np.abs(heat_equation_solution))
+        lc.set_clim(-vmax, vmax)
+
+        line = ax.add_collection(lc)
+
+        fig.colorbar(lc, ax=ax)
+
+        ax.set_xlim(x_array.min(), x_array.max())
+        ax.set_ylim(
+            np.min(heat_equation_solution),
+            np.max(heat_equation_solution)
+        )
+
+        ax.set_xlabel("Position")
+        ax.set_ylabel("Temperature")
 
         def update(frame):
 
-            line.set_ydata(heat_equation_solution[frame])
+            y = heat_equation_solution[frame]
 
-            ax.set_title(f"Time: {time_array[frame]:.2f}")
+            points = np.array([x_array, y]).T
+            segments = np.stack([points[:-1], points[1:]], axis=1)
+
+            line.set_segments(segments)
+            line.set_array(y)
+
+            ax.set_title(f"Temperature profile ({basis} initial condition, t = {time_array[frame]:.2f})")
 
             return line,
 
         ani = FuncAnimation(fig, update, frames=len(time_array), interval=100, blit=False)
-
         os.makedirs('animations', exist_ok=True)
-        variable_name = f"heat_equation_solution_{basis}"
+        variable_name = f"temperature_profile_{basis}"
         ani.save(f'animations/{variable_name}.mp4', writer="ffmpeg")
 
         plt.show()
@@ -327,11 +365,11 @@ def plot_heat_equation_solution(x_array, time_array, heat_equation_solution, bas
 if __name__ == "__main__":
 
     x_array = np.linspace(0, 1, 1001, endpoint=False)
-    time_array = np.linspace(0, 1, 1001, endpoint=False)
+    time_array = np.linspace(0, 10, 1001, endpoint=False)
 
     num_frequencies = 500
     nu = 0.05
-    basis = "cosine"
+    basis = "periodic"  # "periodic" or "cosine"
 
     signal_values = generate_step_signal(x_array)
     mode_indices = generate_mode_indices(num_frequencies, basis=basis)
@@ -340,10 +378,10 @@ if __name__ == "__main__":
     series_array = compute_series(series_terms)
     heat_equation_solution = compute_heat_equation_solution(series_terms, mode_indices, time_array, nu, basis=basis)
 
-    # plot_signals(x_array, signal_values)
-    # plot_epicycles(series_terms, dx=35)
-    # plot_epicycles(series_terms, animate=True)
-    plot_signals(x_array, signal_values, series_array)
+    plot_signals(x_array, signal_values)
+    plot_epicycles(series_terms, dx=35)
+    plot_epicycles(series_terms, animate=True)
+    plot_signals(x_array, signal_values, series_array) 
     plot_signals(x_array, signal_values, series_array[-1])
     plot_heat_equation_solution(x_array, time_array, heat_equation_solution, basis=basis, animate=False)
     plot_heat_equation_solution(x_array, time_array, heat_equation_solution, basis=basis, animate=True)

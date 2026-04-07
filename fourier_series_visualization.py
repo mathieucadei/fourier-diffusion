@@ -94,34 +94,27 @@ def compute_heat_equation_solution(series_terms, mode_indices, time_array, nu, b
     return np.sum(series_terms[None, :, :] * decay, axis=2).real
 
 
-def plot_signals(x_array, original_signal, fourier_signals=None, title="Signal vs x", x_label="x", y_label="Amplitude"):
-    """
-    x_array: 1D array of x values.
-    signals: list of 1D arrays, each same length as x_array.
-    labels: list of strings, one per signal.
-    title: plot title string.
-    x_label: x axis label string.
-    y_label: y axis label string.
-    """
+def plot_signals(x_array, original_signal, series_signals=None, title="Signal vs x", x_label="x", y_label="Amplitude"):
+
     plt.figure(figsize=(20, 12))
 
     plt.plot(x_array, original_signal, label="Original Signal", color='black')
 
-    if fourier_signals is not None:
-        if np.ndim(fourier_signals) == 1:
-            fourier_signals = [fourier_signals]
+    if series_signals is not None:
+        if np.ndim(series_signals) == 1:
+            series_signals = [series_signals]
 
-        if len(fourier_signals) > 0:
-            n = len(fourier_signals)
+        if len(series_signals) > 0:
+            n = len(series_signals)
             cmap = cm.plasma
 
             if n == 1:
-                plt.plot(x_array, fourier_signals[0], label="Fourier Signal")
+                plt.plot(x_array, series_signals[0], label="Fourier Signal")
 
             else:
                 norm = colors.Normalize(vmin=0, vmax=n-1)  
 
-                for i, y in enumerate(fourier_signals):
+                for i, y in enumerate(series_signals):
                     plt.plot(x_array, y, color=cmap(norm(i)))
                 
                 sm = cm.ScalarMappable(norm=norm, cmap=cmap)
@@ -137,12 +130,14 @@ def plot_signals(x_array, original_signal, fourier_signals=None, title="Signal v
     plt.show()
 
 
-def plot_fourier_series_terms(fourier_series_terms, dx=25, animate=False):
+def plot_epicycles(series_terms, dx=25, animate=False):
 
+    if not np.iscomplexobj(series_terms):
+        raise ValueError("plot_epicycles requires complex series_terms (periodic basis)")
+    
     fig, ax = plt.subplots(figsize=(10, 10))
-    fig.suptitle("Fourier series vector sum (epicycles)")
 
-    all_cumulative = np.cumsum(fourier_series_terms, axis=1)
+    all_cumulative = np.cumsum(series_terms, axis=1)
     limit = 1.2 * np.max(np.abs(all_cumulative))
 
     ax.set_xlim(-limit, limit)
@@ -163,15 +158,15 @@ def plot_fourier_series_terms(fourier_series_terms, dx=25, animate=False):
 
     if animate is False:
 
-        U = fourier_series_terms[dx].real
-        V = fourier_series_terms[dx].imag
+        U = series_terms[dx].real
+        V = series_terms[dx].imag
 
-        cumulative = np.cumsum(fourier_series_terms[dx])
+        cumulative = np.cumsum(series_terms[dx])
 
         x = np.concatenate(([0], cumulative.real[:-1]))
         y = np.concatenate(([0], cumulative.imag[:-1]))
 
-        radius = np.abs(fourier_series_terms[dx])
+        radius = np.abs(series_terms[dx])
 
         ax.quiver(
             x,
@@ -192,21 +187,23 @@ def plot_fourier_series_terms(fourier_series_terms, dx=25, animate=False):
             )
             ax.add_patch(circle)
 
+        fig.suptitle(f"Epicycles @Time Step={dx}")
+
         plt.show()
         
     else:
 
-        U = fourier_series_terms[0].real
-        V = fourier_series_terms[0].imag
+        U = series_terms[0].real
+        V = series_terms[0].imag
 
-        cumulative = np.cumsum(fourier_series_terms[0])
+        cumulative = np.cumsum(series_terms[0])
 
         x = np.concatenate(([0], cumulative.real[:-1]))
         y = np.concatenate(([0], cumulative.imag[:-1]))
 
         centers = list(zip(x, y))
 
-        radius = np.abs(fourier_series_terms[0])
+        radius = np.abs(series_terms[0])
 
         circles = []
 
@@ -238,10 +235,10 @@ def plot_fourier_series_terms(fourier_series_terms, dx=25, animate=False):
 
             qvr.remove()
 
-            U = fourier_series_terms[frame].real
-            V = fourier_series_terms[frame].imag
+            U = series_terms[frame].real
+            V = series_terms[frame].imag
 
-            cumulative = np.cumsum(fourier_series_terms[frame])
+            cumulative = np.cumsum(series_terms[frame])
 
             x = np.concatenate(([0], cumulative.real[:-1]))
             y = np.concatenate(([0], cumulative.imag[:-1]))
@@ -260,21 +257,23 @@ def plot_fourier_series_terms(fourier_series_terms, dx=25, animate=False):
 
             for ci, circle in zip(centers, circles):
                 circle.center = (ci)
+            
+            ax.set_title(f"Epicycles @Time Step={frame}")
 
             return (qvr, *circles)
         
-        ani = FuncAnimation(fig, update, frames=len(fourier_series_terms), interval=100, blit=False)
+        ani = FuncAnimation(fig, update, frames=len(series_terms), interval=100, blit=False)
 
         os.makedirs("animations", exist_ok=True)
 
-        variable_name = "fourier_series_terms"
+        variable_name = "epycicles"
 
         ani.save(f"animations/{variable_name}.mp4", writer="ffmpeg")
 
         plt.show()
 
 
-def plot_heat_equation_solution(x_array, time_array, heat_equation_solution, animate=False):
+def plot_heat_equation_solution(x_array, time_array, heat_equation_solution, basis="periodic", animate=False):
 
     if animate is False:
 
@@ -284,7 +283,7 @@ def plot_heat_equation_solution(x_array, time_array, heat_equation_solution, ani
         y = time_array
         X, Y = np.meshgrid(x, y)
 
-        surf = ax.plot_surface(
+        ax.plot_surface(
         X,
         Y,
         heat_equation_solution,
@@ -302,7 +301,7 @@ def plot_heat_equation_solution(x_array, time_array, heat_equation_solution, ani
 
         ax.set_xlabel("x")
         ax.set_ylabel("u", rotation=0)
-        ax.set_title("Heat Equation Solution")
+        ax.set_title(f"Heat Equation Solution {basis}")
 
         def update(frame):
 
@@ -315,7 +314,7 @@ def plot_heat_equation_solution(x_array, time_array, heat_equation_solution, ani
         ani = FuncAnimation(fig, update, frames=len(time_array), interval=100, blit=False)
 
         os.makedirs('animations', exist_ok=True)
-        variable_name = "heat_equation_solution"
+        variable_name = f"heat_equation_solution_{basis}"
         ani.save(f'animations/{variable_name}.mp4', writer="ffmpeg")
 
         plt.show()
@@ -325,21 +324,23 @@ def plot_heat_equation_solution(x_array, time_array, heat_equation_solution, ani
 if __name__ == "__main__":
 
     x_array = np.linspace(0, 1, 1001, endpoint=False)
-    num_frequencies = 500
     time_array = np.linspace(0, 1, 1001, endpoint=False)
+
+    num_frequencies = 500
     nu = 0.05
+    basis = "periodic"
 
     signal_values = generate_step_signal(x_array)
-    frequency_indices = generate_frequency_indices(num_frequencies)
-    fourier_coefficients = compute_fourier_coefficients(signal_values, x_array, frequency_indices)
-    fourier_series_terms = compute_fourier_series_terms(frequency_indices, fourier_coefficients, x_array)
-    fourier_series_array = compute_fourier_series(fourier_series_terms)
-    heat_equation_solution = compute_heat_equation_solution(fourier_series_terms, frequency_indices, time_array, nu)
+    mode_indices = generate_mode_indices(num_frequencies, basis=basis)
+    mode_coefficients = compute_coefficients(signal_values, x_array, mode_indices, basis=basis)
+    series_terms = compute_series_terms(mode_indices, mode_coefficients, x_array, basis=basis)
+    series_array = compute_series(series_terms)
+    heat_equation_solution = compute_heat_equation_solution(series_terms, mode_indices, time_array, nu, basis=basis)
 
-    # plot_signals(x_array, signal_values)
-    # plot_fourier_series_terms(fourier_series_terms, dx=35)
-    # plot_fourier_series_terms(fourier_series_terms, animate=True)
-    # plot_signals(x_array, signal_values, fourier_series_array)
-    # plot_signals(x_array, signal_values, fourier_series_array[-1])
-    # plot_heat_equation_solution(x_array, time_array, heat_equation_solution, animate=False)
-    # plot_heat_equation_solution(x_array, time_array, heat_equation_solution, animate=True)
+    plot_signals(x_array, signal_values)
+    plot_epicycles(series_terms, dx=35)
+    plot_epicycles(series_terms, animate=True)
+    plot_signals(x_array, signal_values, series_array)
+    plot_signals(x_array, signal_values, series_array[-1])
+    plot_heat_equation_solution(x_array, time_array, heat_equation_solution, basis=basis, animate=False)
+    plot_heat_equation_solution(x_array, time_array, heat_equation_solution, basis=basis, animate=True)

@@ -5,18 +5,17 @@ from matplotlib.ticker import FuncFormatter
 from matplotlib import cm, colors
 from matplotlib.animation import FuncAnimation
 from matplotlib.collections import LineCollection
-
 import os
 
-def generate_step_signal(x_array, domain_length=1):
+
+def generate_signal(x_array, x_start=0, x_end=0.5, amplitude_min=-1, amplitude_max=1):
 
     signal_values = np.zeros_like(x_array)
 
-    signal_values[x_array < domain_length/2] = 1
-    signal_values[x_array > domain_length/2] = -1
+    signal_values[(x_array < x_start) | (x_array > x_end)] = amplitude_min
+    signal_values[(x_array >= x_start) & (x_array <= x_end)] = amplitude_max
 
     return signal_values
-
 
 def generate_mode_indices(num_modes, basis="periodic"):
 
@@ -95,13 +94,20 @@ def compute_heat_equation_solution(series_terms, mode_indices, time_array, nu, b
     return np.sum(series_terms[None, :, :] * decay, axis=2).real
 
 
-def plot_signals(x_array, original_signal, series_signals=None, title="Signal vs Position", x_label="Position", y_label="Amplitude"):
+def plot_signals(x_array, original_signal, series_signals=None, title="Signal vs Position", x_label="Position", y_label="Amplitude", save_fig=False):
 
     plt.figure(figsize=(20, 12))
 
     plt.plot(x_array, original_signal, label="Original Signal", color='black')
 
+    if save_fig == True:
+
+        os.makedirs('figures', exist_ok=True)
+        variable_name = f"original_signals"
+        plt.savefig(f'figures/{variable_name}.png')
+
     if series_signals is not None:
+
         if np.ndim(series_signals) == 1:
             series_signals = [series_signals]
 
@@ -111,6 +117,11 @@ def plot_signals(x_array, original_signal, series_signals=None, title="Signal vs
 
             if n == 1:
                 plt.plot(x_array, series_signals[0], label="Series Signal")
+
+                if save_fig == True:
+                    os.makedirs('figures', exist_ok=True)
+                    variable_name = f"series_signal"
+                    plt.savefig(f'figures/{variable_name}.png')
 
             else:
                 norm = colors.Normalize(vmin=0, vmax=n-1)  
@@ -122,20 +133,21 @@ def plot_signals(x_array, original_signal, series_signals=None, title="Signal vs
                 ax = plt.gca()  # Get current axes
                 plt.colorbar(sm, ax=ax, label="Frequency")
 
+                if save_fig == True:
+                    os.makedirs('figures', exist_ok=True)
+                    variable_name = f"multi_modes_series_signals"
+                    plt.savefig(f'figures/{variable_name}.png')
+
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.title(title)
     plt.legend()
     plt.tight_layout()
 
-    os.makedirs('figures', exist_ok=True)
-    variable_name = f"series_signals"
-    plt.savefig(f'figures/{variable_name}.png')
-
     plt.show()
 
 
-def plot_epicycles(series_terms, dx=25, animate=False):
+def plot_epicycles(series_terms, dx=25, animate=False, save_fig=False):
 
     if not np.iscomplexobj(series_terms):
         raise ValueError("plot_epicycles requires complex series_terms (periodic basis)")
@@ -194,9 +206,10 @@ def plot_epicycles(series_terms, dx=25, animate=False):
 
         fig.suptitle(f"Epicycles @Time={dx}")
 
-        os.makedirs('figures', exist_ok=True)
-        variable_name = f"epicycles"
-        fig.savefig(f'figures/{variable_name}.png')
+        if save_fig == True:
+            os.makedirs('figures', exist_ok=True)
+            variable_name = f"epicycles"
+            fig.savefig(f'figures/{variable_name}.png')
 
         plt.show()
         
@@ -272,14 +285,16 @@ def plot_epicycles(series_terms, dx=25, animate=False):
             return (qvr, *circles)
         
         ani = FuncAnimation(fig, update, frames=len(series_terms), interval=100, blit=False)
-        os.makedirs("animations", exist_ok=True)
-        variable_name = "epicycles"
-        ani.save(f"animations/{variable_name}.mp4", writer="ffmpeg")
+
+        if save_fig == True:
+            os.makedirs("animations", exist_ok=True)
+            variable_name = "epicycles"
+            ani.save(f"animations/{variable_name}.mp4", writer="ffmpeg")
 
         plt.show()
 
 
-def plot_heat_equation_solution(x_array, time_array, heat_equation_solution, basis="periodic", animate=False):
+def plot_heat_equation_solution(x_array, time_array, heat_equation_solution, basis="periodic", animate=False, save_fig=False):
 
     if animate is False:
 
@@ -304,9 +319,10 @@ def plot_heat_equation_solution(x_array, time_array, heat_equation_solution, bas
 
         fig.colorbar(surf, ax=ax)
 
-        os.makedirs('figures', exist_ok=True)
-        variable_name = f"temperature_profile_{basis}"
-        fig.savefig(f'figures/{variable_name}.png')
+        if save_fig == True:
+            os.makedirs('figures', exist_ok=True)
+            variable_name = f"temperature_profile_{basis}"
+            fig.savefig(f'figures/{variable_name}.png')
 
         plt.show()
     
@@ -354,9 +370,11 @@ def plot_heat_equation_solution(x_array, time_array, heat_equation_solution, bas
             return line,
 
         ani = FuncAnimation(fig, update, frames=len(time_array), interval=100, blit=False)
-        os.makedirs('animations', exist_ok=True)
-        variable_name = f"temperature_profile_{basis}"
-        ani.save(f'animations/{variable_name}.mp4', writer="ffmpeg")
+
+        if save_fig == True:
+            os.makedirs('animations', exist_ok=True)
+            variable_name = f"temperature_profile_{basis}"
+            ani.save(f'animations/{variable_name}.mp4', writer="ffmpeg")
 
         plt.show()
 
@@ -368,20 +386,20 @@ if __name__ == "__main__":
     time_array = np.linspace(0, 10, 1001, endpoint=False)
 
     num_frequencies = 500
-    nu = 0.05
+    nu = 0.03
     basis = "periodic"  # "periodic" or "cosine"
 
-    signal_values = generate_step_signal(x_array)
+    signal_values = generate_signal(x_array, x_start=0, x_end=0.5, amplitude_min=-1, amplitude_max=1)
     mode_indices = generate_mode_indices(num_frequencies, basis=basis)
     mode_coefficients = compute_coefficients(signal_values, x_array, mode_indices, basis=basis)
     series_terms = compute_series_terms(mode_indices, mode_coefficients, x_array, basis=basis)
     series_array = compute_series(series_terms)
     heat_equation_solution = compute_heat_equation_solution(series_terms, mode_indices, time_array, nu, basis=basis)
 
-    plot_signals(x_array, signal_values)
-    plot_epicycles(series_terms, dx=35)
-    plot_epicycles(series_terms, animate=True)
-    plot_signals(x_array, signal_values, series_array) 
-    plot_signals(x_array, signal_values, series_array[-1])
-    plot_heat_equation_solution(x_array, time_array, heat_equation_solution, basis=basis, animate=False)
-    plot_heat_equation_solution(x_array, time_array, heat_equation_solution, basis=basis, animate=True)
+    plot_signals(x_array, signal_values, save_fig=False)
+    plot_epicycles(series_terms, dx=35, save_fig=False)
+    plot_epicycles(series_terms, animate=True, save_fig=False)
+    plot_signals(x_array, signal_values, series_array, save_fig=False)
+    plot_signals(x_array, signal_values, series_array[-1], save_fig=False)
+    plot_heat_equation_solution(x_array, time_array, heat_equation_solution, basis=basis, animate=False, save_fig=False)
+    plot_heat_equation_solution(x_array, time_array, heat_equation_solution, basis=basis, animate=True, save_fig=False)

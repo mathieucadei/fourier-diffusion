@@ -5,6 +5,8 @@ from matplotlib.patches import Circle
 from matplotlib.ticker import FuncFormatter
 from matplotlib import cm, colors
 from matplotlib.animation import FuncAnimation
+from matplotlib.collections import LineCollection
+
 import os
 
 def generate_step_signal(x_array, domain_length=1):
@@ -46,28 +48,28 @@ def compute_coefficients(signal_values, x_array, mode_indices, basis="periodic")
     mode_column = mode_indices[:, None]
 
     if basis == "periodic":
-        basis_matrix  = np.exp(
-            -2j * np.pi * mode_column * x_row
-        )
-    
+        basis_matrix  = np.exp(-2j * np.pi * mode_column * x_row)
+        return (signal_values * basis_matrix).sum(axis=1) * dx
+     
     elif basis == "cosine":
         basis_matrix = np.cos(np.pi * mode_column * x_row)
+        coefficients = (signal_values * basis_matrix).sum(axis=1) * dx
+        coefficients[1:] = 2 * coefficients[1:]
+        return coefficients
 
     else:
         raise ValueError("basis must be 'periodic' or 'cosine'")
-    
-    return (signal_values * basis_matrix).sum(axis=1) * dx
 
 
-def compute_series_terms(mode_indices, coefficients_array, x_array, basis="periodic"):
+def compute_series_terms(mode_indices, coefficients, x_array, basis="periodic"):
 
     x_column = x_array[:, None]
 
     if basis == "periodic":
-        return coefficients_array*np.exp(mode_indices * 2j * np.pi * x_column)
+        return coefficients*np.exp(mode_indices * 2j * np.pi * x_column)
     
     elif basis == "cosine":
-        return coefficients_array*np.cos(np.pi * mode_indices * x_column)
+        return coefficients*np.cos(np.pi * mode_indices * x_column)
 
     else:
         raise ValueError("basis must be 'periodic' or 'cosine'")
@@ -287,7 +289,7 @@ def plot_heat_equation_solution(x_array, time_array, heat_equation_solution, bas
         X,
         Y,
         heat_equation_solution,
-        cmap=cm.viridis
+        cmap=cm.coolwarm
         )
         ax.set_xlabel("x")
         ax.set_ylabel("t")
@@ -296,6 +298,7 @@ def plot_heat_equation_solution(x_array, time_array, heat_equation_solution, bas
         plt.show()
     
     else:
+
         fig, ax = plt.subplots(figsize=(10, 6))
         line, = ax.plot(x_array, heat_equation_solution[0], lw=2)
 
@@ -328,7 +331,7 @@ if __name__ == "__main__":
 
     num_frequencies = 500
     nu = 0.05
-    basis = "periodic"
+    basis = "cosine"
 
     signal_values = generate_step_signal(x_array)
     mode_indices = generate_mode_indices(num_frequencies, basis=basis)
@@ -337,9 +340,9 @@ if __name__ == "__main__":
     series_array = compute_series(series_terms)
     heat_equation_solution = compute_heat_equation_solution(series_terms, mode_indices, time_array, nu, basis=basis)
 
-    plot_signals(x_array, signal_values)
-    plot_epicycles(series_terms, dx=35)
-    plot_epicycles(series_terms, animate=True)
+    # plot_signals(x_array, signal_values)
+    # plot_epicycles(series_terms, dx=35)
+    # plot_epicycles(series_terms, animate=True)
     plot_signals(x_array, signal_values, series_array)
     plot_signals(x_array, signal_values, series_array[-1])
     plot_heat_equation_solution(x_array, time_array, heat_equation_solution, basis=basis, animate=False)

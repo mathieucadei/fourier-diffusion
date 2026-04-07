@@ -17,6 +17,7 @@ def generate_signal(x_array, x_start=0, x_end=0.5, amplitude_min=-1, amplitude_m
 
     return signal_values
 
+
 def generate_mode_indices(num_modes, basis="periodic"):
 
     if basis == "periodic":

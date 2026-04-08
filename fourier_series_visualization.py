@@ -95,16 +95,22 @@ def compute_heat_equation_solution(series_terms, mode_indices, time_array, nu, b
     return np.sum(series_terms[None, :, :] * decay, axis=2).real
 
 
-def plot_signals(x_array, original_signal, series_signals=None, title="Signal vs Position", x_label="Position", y_label="Amplitude", save_fig=False):
+def plot_signals(x_array, original_signal, series_signals=None, title="Signal vs Position", x_label="Position", y_label="Amplitude", basis="periodic", save_fig=False):
 
     plt.figure(figsize=(20, 12))
 
     plt.plot(x_array, original_signal, label="Original Signal", color='black')
 
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.title(f"{title} ({basis})")
+    plt.legend()
+    plt.tight_layout()
+
     if save_fig == True:
 
         os.makedirs('figures', exist_ok=True)
-        variable_name = f"original_signals"
+        variable_name = f"original_signals_{basis}"
         plt.savefig(f'figures/{variable_name}.png')
 
     if series_signals is not None:
@@ -121,7 +127,7 @@ def plot_signals(x_array, original_signal, series_signals=None, title="Signal vs
 
                 if save_fig == True:
                     os.makedirs('figures', exist_ok=True)
-                    variable_name = f"series_signal"
+                    variable_name = f"series_signals_{basis}"
                     plt.savefig(f'figures/{variable_name}.png')
 
             else:
@@ -136,14 +142,8 @@ def plot_signals(x_array, original_signal, series_signals=None, title="Signal vs
 
                 if save_fig == True:
                     os.makedirs('figures', exist_ok=True)
-                    variable_name = f"multi_modes_series_signals"
+                    variable_name = f"multi_modes_series_signals_{basis}"
                     plt.savefig(f'figures/{variable_name}.png')
-
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
-    plt.title(title)
-    plt.legend()
-    plt.tight_layout()
 
     plt.show()
 
@@ -397,10 +397,10 @@ if __name__ == "__main__":
     series_array = compute_series(series_terms)
     heat_equation_solution = compute_heat_equation_solution(series_terms, mode_indices, time_array, nu, basis=basis)
 
-    plot_signals(x_array, signal_values, save_fig=False)
+    plot_signals(x_array, signal_values, basis=basis, save_fig=False)
     plot_epicycles(series_terms, dx=35, save_fig=False)
     plot_epicycles(series_terms, animate=True, save_fig=False)
-    plot_signals(x_array, signal_values, series_array, save_fig=False)
-    plot_signals(x_array, signal_values, series_array[-1], save_fig=False)
+    plot_signals(x_array, signal_values, series_array, basis=basis, save_fig=False)
+    plot_signals(x_array, signal_values, series_array[-1], basis=basis, save_fig=False)
     plot_heat_equation_solution(x_array, time_array, heat_equation_solution, basis=basis, animate=False, save_fig=False)
     plot_heat_equation_solution(x_array, time_array, heat_equation_solution, basis=basis, animate=True, save_fig=False)

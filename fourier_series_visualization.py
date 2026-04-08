@@ -8,7 +8,25 @@ from matplotlib.collections import LineCollection
 import os
 
 
-def generate_signal(x_array, x_start=0, x_end=0.5, amplitude_min=-1, amplitude_max=1):
+def generate_signal(
+    x_array: np.ndarray, 
+    x_start: float=0, 
+    x_end: float=0.5, 
+    amplitude_min: float=-1, 
+    amplitude_max: float=1
+) -> np.ndarray:
+    
+    """Generate a piecewise constant signal defined on the interval [0, 1).
+    The signal takes the value `amplitude_max` on the interval [x_start, x_end] and `amplitude_min` elsewhere.
+    Parameters:
+    - x_array: 1D numpy array of x values where the signal is evaluated.
+    - x_start: Start of the interval where the signal takes the maximum value.
+    - x_end: End of the interval where the signal takes the maximum value.
+    - amplitude_min: Minimum amplitude of the signal.
+    - amplitude_max: Maximum amplitude of the signal.
+    Returns:
+    - A 1D numpy array of signal values corresponding to the x_array.
+    """
 
     signal_values = np.zeros_like(x_array)
 
@@ -18,17 +36,27 @@ def generate_signal(x_array, x_start=0, x_end=0.5, amplitude_min=-1, amplitude_m
     return signal_values
 
 
-def generate_mode_indices(num_modes, basis="periodic"):
+def generate_mode_indices(num_modes: int, basis: str="periodic") -> np.ndarray:
+
+    """Generate mode indices for Fourier series expansion.
+    For the periodic basis, the mode indices are arranged as [0, 1, -1, 2, -2, ..., num_modes, -num_modes].
+    For the cosine basis, the mode indices are simply [0, 1, 2, ..., num_modes].
+    Parameters:
+    - num_modes: Number of modes to generate.
+    - basis: Basis for the Fourier series expansion ('periodic' or 'cosine').
+    Returns:
+    - A 1D numpy array of mode indices corresponding to the specified basis.
+    """
 
     if basis == "periodic":
 
-        mode_indices = np.empty(2 * num_modes + 1, dtype=int)   # make an empty array of the right length
-        mode_indices[0] = 0                                     # first value is 0
+        mode_indices = np.empty(2 * num_modes + 1, dtype=int)
+        mode_indices[0] = 0
         
-        positive_indices = np.arange(1, num_modes + 1)          # [1, 2, 3, ..., num_modes]
+        positive_indices = np.arange(1, num_modes + 1)
 
-        mode_indices[1::2] = positive_indices                   # put positives at positions 1,3,5,...
-        mode_indices[2::2] = -positive_indices                  # put negatives at positions 2,4,6,...
+        mode_indices[1::2] = positive_indices
+        mode_indices[2::2] = -positive_indices
     
         return mode_indices
 
@@ -39,7 +67,23 @@ def generate_mode_indices(num_modes, basis="periodic"):
         raise ValueError("basis must be 'periodic' or 'cosine'")
 
 
-def compute_coefficients(signal_values, x_array, mode_indices, basis="periodic"):
+def compute_coefficients(
+    signal_values: np.ndarray, 
+    x_array: np.ndarray, 
+    mode_indices: np.ndarray, 
+    basis: str="periodic"
+) -> np.ndarray:
+
+    """Compute Fourier coefficients for the given signal and mode indices.
+    Parameters:     
+    - signal_values: 1D numpy array of signal values evaluated at x_array.
+    - x_array: 1D numpy array of x values where the signal is evaluated.
+    - mode_indices: 1D numpy array of mode indices.
+    - basis: Basis for the Fourier series expansion ('periodic' or 'cosine').
+    Returns:    
+    - A 1D numpy array of Fourier coefficients corresponding to the mode indices.
+    """
+
 
     dx = x_array[1] - x_array[0]
 
@@ -47,7 +91,7 @@ def compute_coefficients(signal_values, x_array, mode_indices, basis="periodic")
     mode_column = mode_indices[:, None]
 
     if basis == "periodic":
-        basis_matrix  = np.exp(-2j * np.pi * mode_column * x_row)
+        basis_matrix = np.exp(-2j * np.pi * mode_column * x_row)
         return (signal_values * basis_matrix).sum(axis=1) * dx
      
     elif basis == "cosine":
@@ -60,25 +104,66 @@ def compute_coefficients(signal_values, x_array, mode_indices, basis="periodic")
         raise ValueError("basis must be 'periodic' or 'cosine'")
 
 
-def compute_series_terms(mode_indices, coefficients, x_array, basis="periodic"):
+def compute_series_terms(
+    mode_indices: np.ndarray, 
+    coefficients: np.ndarray, 
+    x_array: np.ndarray, 
+    basis: str="periodic"
+) -> np.ndarray:
+
+    """Compute the terms of the Fourier series for each mode and x value.
+    Parameters:    
+    - mode_indices: 1D numpy array of mode indices.  
+    - coefficients: 1D numpy array of Fourier coefficients corresponding to the mode indices.  
+    - x_array: 1D numpy array of x values where the series is evaluated.  
+    - basis: Basis for the Fourier series expansion ('periodic' or 'cosine').  
+    Returns:    
+    - A 2D numpy array of shape (num_x, num_modes) containing the Fourier series terms for each mode and x value.
+    Each element (i, j) of the output array corresponds to the contribution of the j-th mode to the Fourier series at the i-th x value.
+    """
 
     x_column = x_array[:, None]
 
     if basis == "periodic":
-        return coefficients*np.exp(mode_indices * 2j * np.pi * x_column)
+        return coefficients * np.exp(mode_indices * 2j * np.pi * x_column)
     
     elif basis == "cosine":
-        return coefficients*np.cos(np.pi * mode_indices * x_column)
+        return coefficients * np.cos(np.pi * mode_indices * x_column)
 
     else:
         raise ValueError("basis must be 'periodic' or 'cosine'")
 
 
-def compute_series(series_terms):
+def compute_series(series_terms: np.ndarray) -> np.ndarray:
+    
+    """Compute the partial sums of the Fourier series by cumulatively summing the series terms along the mode axis.
+    Parameters:
+    - series_terms: 2D numpy array of shape (num_x, num_modes) containing the Fourier series terms for each mode and x value.
+    Returns:
+    - A 2D numpy array of shape (num_modes, num_x) containing the cumulative partial sums of the Fourier series.
+    """
+
     return np.cumsum(series_terms, axis=1).T
 
 
-def compute_heat_equation_solution(series_terms, mode_indices, time_array, nu, basis="periodic"):
+def compute_heat_equation_solution(
+    series_terms: np.ndarray, 
+    mode_indices: np.ndarray, 
+    time_array: np.ndarray, 
+    nu: float, 
+    basis: str="periodic"
+) -> np.ndarray:
+
+    """Compute the solution of the heat equation at different time steps using the Fourier series representation of the initial condition.
+    Parameters:
+    - series_terms: 2D numpy array of shape (num_x, num_modes) containing the Fourier series terms for each mode and x value.
+    - mode_indices: 1D numpy array of mode indices corresponding to the Fourier series expansion.
+    - time_array: 1D numpy array of time values where the solution is evaluated.
+    - nu: Diffusion coefficient in the heat equation.
+    - basis: Basis for the Fourier series expansion ('periodic' or 'cosine').
+    Returns:
+    - A 2D numpy array of shape (num_time, num_x) containing the solution of the heat equation at each time step and x value.
+    """
     
     t = time_array[:, None, None]
     n = mode_indices[None, None, :]
@@ -95,7 +180,30 @@ def compute_heat_equation_solution(series_terms, mode_indices, time_array, nu, b
     return np.sum(series_terms[None, :, :] * decay, axis=2).real
 
 
-def plot_signals(x_array, original_signal, series_signals=None, title="Signal vs Position", x_label="Position", y_label="Amplitude", basis="periodic", save_fig=False):
+def plot_signals(
+    x_array: np.ndarray, 
+    original_signal: np.ndarray, 
+    series_signals: np.ndarray=None, 
+    title: str="Signal vs Position", 
+    x_label: str="Position", 
+    y_label: str="Amplitude", 
+    basis: str="periodic", 
+    save_fig: bool=False
+) -> None:
+
+    """Plot the original signal and the Fourier series approximations.
+    Parameters:
+    - x_array: 1D numpy array of x values.
+    - original_signal: 1D numpy array of the original signal values.
+    - series_signals: 1D or 2D numpy array of the Fourier series approximations.
+    - title: Title for the plot.
+    - x_label: Label for the x-axis.
+    - y_label: Label for the y-axis.
+    - basis: Basis for the Fourier series expansion ('periodic' or 'cosine').
+    - save_fig: Whether to save the figure.
+     Returns:
+    - None (the function displays the plot and optionally saves it to a file).
+    """
 
     plt.figure(figsize=(20, 12))
 
@@ -107,10 +215,10 @@ def plot_signals(x_array, original_signal, series_signals=None, title="Signal vs
     plt.legend()
     plt.tight_layout()
 
-    if save_fig == True:
+    if save_fig:
 
         os.makedirs('figures', exist_ok=True)
-        variable_name = f"original_signals_{basis}"
+        variable_name = f"original_signal_{basis}"
         plt.savefig(f'figures/{variable_name}.png')
 
     if series_signals is not None:
@@ -125,7 +233,7 @@ def plot_signals(x_array, original_signal, series_signals=None, title="Signal vs
             if n == 1:
                 plt.plot(x_array, series_signals[0], label="Series Signal")
 
-                if save_fig == True:
+                if save_fig:
                     os.makedirs('figures', exist_ok=True)
                     variable_name = f"series_signals_{basis}"
                     plt.savefig(f'figures/{variable_name}.png')
@@ -140,7 +248,7 @@ def plot_signals(x_array, original_signal, series_signals=None, title="Signal vs
                 ax = plt.gca()  # Get current axes
                 plt.colorbar(sm, ax=ax, label="Frequency")
 
-                if save_fig == True:
+                if save_fig:
                     os.makedirs('figures', exist_ok=True)
                     variable_name = f"multi_modes_series_signals_{basis}"
                     plt.savefig(f'figures/{variable_name}.png')
@@ -148,7 +256,22 @@ def plot_signals(x_array, original_signal, series_signals=None, title="Signal vs
     plt.show()
 
 
-def plot_epicycles(series_terms, dx=25, animate=False, save_fig=False):
+def plot_epicycles(
+    series_terms: np.ndarray, 
+    sample_index: int=25, 
+    animate: bool=False, 
+    save_fig: bool=False
+) -> None:
+
+    """Visualize the Fourier series as epicycles.
+    Parameters:
+    - series_terms: 2D numpy array of complex Fourier coefficients.
+    - sample_index: Index of the time step to visualize.
+    - animate: Whether to create an animated visualization.
+    - save_fig: Whether to save the figure.
+    Returns:
+    - None (the function displays the plot and optionally saves it to a file).
+    """
 
     if not np.iscomplexobj(series_terms):
         raise ValueError("plot_epicycles requires complex series_terms (periodic basis)")
@@ -176,15 +299,15 @@ def plot_epicycles(series_terms, dx=25, animate=False, save_fig=False):
 
     if animate is False:
 
-        U = series_terms[dx].real
-        V = series_terms[dx].imag
+        U = series_terms[sample_index].real
+        V = series_terms[sample_index].imag
 
-        cumulative = np.cumsum(series_terms[dx])
+        cumulative = np.cumsum(series_terms[sample_index])
 
         x = np.concatenate(([0], cumulative.real[:-1]))
         y = np.concatenate(([0], cumulative.imag[:-1]))
 
-        radius = np.abs(series_terms[dx])
+        radius = np.abs(series_terms[sample_index])
 
         ax.quiver(
             x,
@@ -205,9 +328,9 @@ def plot_epicycles(series_terms, dx=25, animate=False, save_fig=False):
             )
             ax.add_patch(circle)
 
-        fig.suptitle(f"Epicycles @Time={dx}")
+        fig.suptitle(f"Epicycles @Time={sample_index}")
 
-        if save_fig == True:
+        if save_fig:
             os.makedirs('figures', exist_ok=True)
             variable_name = f"epicycles"
             fig.savefig(f'figures/{variable_name}.png')
@@ -287,7 +410,7 @@ def plot_epicycles(series_terms, dx=25, animate=False, save_fig=False):
         
         ani = FuncAnimation(fig, update, frames=len(series_terms), interval=100, blit=False)
 
-        if save_fig == True:
+        if save_fig:
             os.makedirs("animations", exist_ok=True)
             variable_name = "epicycles"
             ani.save(f"animations/{variable_name}.mp4", writer="ffmpeg")
@@ -295,7 +418,26 @@ def plot_epicycles(series_terms, dx=25, animate=False, save_fig=False):
         plt.show()
 
 
-def plot_heat_equation_solution(x_array, time_array, heat_equation_solution, basis="periodic", animate=False, save_fig=False):
+def plot_heat_equation_solution(
+    x_array: np.ndarray, 
+    time_array: np.ndarray, 
+    heat_equation_solution: np.ndarray, 
+    basis: str="periodic", 
+    animate: bool=False, 
+    save_fig: bool=False
+) -> None:
+
+    """Plot the solution of the heat equation as a function of position and time.
+    Parameters:
+    - x_array: 1D numpy array of x values.
+    - time_array: 1D numpy array of time values.
+    - heat_equation_solution: 2D numpy array of the heat equation solution.
+    - basis: Basis for the Fourier series expansion ('periodic' or 'cosine').
+    - animate: Whether to create an animated visualization.
+    - save_fig: Whether to save the figure.
+    Returns:
+    - None (the function displays the plot and optionally saves it to a file).
+    """
 
     if animate is False:
 
@@ -320,7 +462,7 @@ def plot_heat_equation_solution(x_array, time_array, heat_equation_solution, bas
 
         fig.colorbar(surf, ax=ax)
 
-        if save_fig == True:
+        if save_fig:
             os.makedirs('figures', exist_ok=True)
             variable_name = f"temperature_profile_{basis}"
             fig.savefig(f'figures/{variable_name}.png')
@@ -372,7 +514,7 @@ def plot_heat_equation_solution(x_array, time_array, heat_equation_solution, bas
 
         ani = FuncAnimation(fig, update, frames=len(time_array), interval=100, blit=False)
 
-        if save_fig == True:
+        if save_fig:
             os.makedirs('animations', exist_ok=True)
             variable_name = f"temperature_profile_{basis}"
             ani.save(f'animations/{variable_name}.mp4', writer="ffmpeg")
@@ -383,24 +525,42 @@ def plot_heat_equation_solution(x_array, time_array, heat_equation_solution, bas
 
 if __name__ == "__main__":
 
-    x_array = np.linspace(0, 1, 1001, endpoint=False)
-    time_array = np.linspace(0, 10, 1001, endpoint=False)
+    x_min = 0.0
+    x_max = 1.0
+    num_x = 1001
 
-    num_frequencies = 500
+    t_min = 0.0
+    t_max = 10.0
+    num_t = 1001
+
+    x_start = 0.0
+    x_end = 0.5
+    amplitude_min = -1.0
+    amplitude_max = 1.0
+
+    num_modes = 500
     nu = 0.03
-    basis = "periodic"  # "periodic" or "cosine"
+    basis = "periodic"
 
-    signal_values = generate_signal(x_array, x_start=0, x_end=0.5, amplitude_min=-1, amplitude_max=1)
-    mode_indices = generate_mode_indices(num_frequencies, basis=basis)
+    sample_index = 35
+    partial_sums_index = -1
+
+    save_fig = False
+
+    x_array = np.linspace(x_min, x_max, num_x, endpoint=False)
+    time_array = np.linspace(t_min, t_max, num_t, endpoint=False)
+
+    signal_values = generate_signal(x_array, x_start=x_start, x_end=x_end, amplitude_min=amplitude_min, amplitude_max=amplitude_max)
+    mode_indices = generate_mode_indices(num_modes, basis=basis)
     mode_coefficients = compute_coefficients(signal_values, x_array, mode_indices, basis=basis)
     series_terms = compute_series_terms(mode_indices, mode_coefficients, x_array, basis=basis)
-    series_array = compute_series(series_terms)
+    partial_sums = compute_series(series_terms)
     heat_equation_solution = compute_heat_equation_solution(series_terms, mode_indices, time_array, nu, basis=basis)
 
-    plot_signals(x_array, signal_values, basis=basis, save_fig=False)
-    plot_epicycles(series_terms, dx=35, save_fig=False)
-    plot_epicycles(series_terms, animate=True, save_fig=False)
-    plot_signals(x_array, signal_values, series_array, basis=basis, save_fig=False)
-    plot_signals(x_array, signal_values, series_array[-1], basis=basis, save_fig=False)
-    plot_heat_equation_solution(x_array, time_array, heat_equation_solution, basis=basis, animate=False, save_fig=False)
-    plot_heat_equation_solution(x_array, time_array, heat_equation_solution, basis=basis, animate=True, save_fig=False)
+    plot_signals(x_array, signal_values, basis=basis, save_fig=save_fig)
+    plot_epicycles(series_terms, sample_index=sample_index, save_fig=save_fig)
+    plot_epicycles(series_terms, animate=True, save_fig=save_fig)
+    plot_signals(x_array, signal_values, partial_sums, basis=basis, save_fig=save_fig)
+    plot_signals(x_array, signal_values, partial_sums[partial_sums_index], basis=basis, save_fig=save_fig)
+    plot_heat_equation_solution(x_array, time_array, heat_equation_solution, basis=basis, animate=False, save_fig=save_fig)
+    plot_heat_equation_solution(x_array, time_array, heat_equation_solution, basis=basis, animate=True, save_fig=save_fig)

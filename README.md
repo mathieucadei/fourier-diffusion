@@ -27,3 +27,7 @@ This project includes a comparison between analytical Fourier-based solutions an
 ```bash
 python run_example.py
 ``` 
+
+## Purpose
+
+This project was developed as a learning and validation tool for understanding diffusion processes and numerical methods, with the long-term goal of building a Navier–Stokes solver.

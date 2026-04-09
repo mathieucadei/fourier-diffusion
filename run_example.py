@@ -74,8 +74,8 @@ heat_equation_solution = compute_heat_equation_solution(
 )
 
 plot_signals(x_array, signal_values, basis=basis, save_fig=save_fig)
-# plot_epicycles(series_terms, sample_index=sample_index, save_fig=save_fig)
-# plot_epicycles(series_terms, animate=True, save_fig=save_fig)
+plot_epicycles(series_terms, sample_index=sample_index, save_fig=save_fig)
+plot_epicycles(series_terms, animate=True, save_fig=save_fig)
 plot_signals(x_array, signal_values, partial_sums, basis=basis, save_fig=save_fig)
 plot_signals(
     x_array, 

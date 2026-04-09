@@ -104,40 +104,41 @@ max_abs_error, rms_error = compute_error_metrics(error)
 print(f"Max absolute error: {max_abs_error:.6e}")
 print(f"RMS error: {rms_error:.6e}")
 
-# plot_signals(x_array, signal_values, basis=basis, save_fig=save_fig)
-# plot_epicycles(series_terms, sample_index=sample_index, save_fig=save_fig)
-# plot_epicycles(series_terms, animate=True, save_fig=save_fig)
-# plot_signals(x_array, signal_values, partial_sums, basis=basis, save_fig=save_fig)
-# plot_signals(
-#     x_array, 
-#     signal_values, 
-#     partial_sums[partial_sums_index], 
-#     basis=basis, 
-#     save_fig=save_fig,
-# )
+plot_signals(x_array, signal_values, basis=basis, save_fig=save_fig)
+plot_epicycles(series_terms, sample_index=sample_index, save_fig=save_fig)
+plot_epicycles(series_terms, animate=True, save_fig=save_fig)
+plot_signals(x_array, signal_values, partial_sums, basis=basis, save_fig=save_fig)
+plot_signals(
+    x_array, 
+    signal_values, 
+    partial_sums[partial_sums_index], 
+    basis=basis, 
+    save_fig=save_fig,
+)
 
-# plot_heat_equation_solution(
-#     x_array, time_array, 
-#     heat_equation_solution, 
-#     basis=basis, 
-#     animate=False, 
-#     save_fig=save_fig,
-# )
+plot_heat_equation_solution(
+    x_array, time_array, 
+    heat_equation_solution, 
+    basis=basis, 
+    animate=False, 
+    save_fig=save_fig,
+)
 
-# plot_heat_equation_solution(
-#     x_array, 
-#     time_array, 
-#     heat_equation_solution, 
-#     basis=basis, 
-#     animate=True, 
-#     save_fig=save_fig,
-# )
+plot_heat_equation_solution(
+    x_array, 
+    time_array, 
+    heat_equation_solution, 
+    basis=basis, 
+    animate=True, 
+    save_fig=save_fig,
+)
 
 plot_heat_equation_solution(
     x_array,
     time_array,
     error,
-    basis="error",
+    basis=basis,
+    error=True,
     animate=True,
     save_fig=save_fig,
 )

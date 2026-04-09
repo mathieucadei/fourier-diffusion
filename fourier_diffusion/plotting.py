@@ -228,7 +228,8 @@ def plot_heat_equation_solution(
     x_array: np.ndarray, 
     time_array: np.ndarray, 
     heat_equation_solution: np.ndarray, 
-    basis: str="periodic", 
+    basis: str="periodic",
+    error: bool=False, 
     animate: bool=False, 
     save_fig: bool=False,
 ) -> None:
@@ -252,22 +253,27 @@ def plot_heat_equation_solution(
         ax.set_xlabel("Position")
         ax.set_ylabel("Time")
 
-        if basis == "error":
+        if error:
             ax.set_zlabel("Error")
         else:
             ax.set_zlabel("Temperature")
 
-        if basis == "error":
-            ax.set_title("Error field")
+        if error:
+            ax.set_title(f"Temperature profile error field ({basis} initial condition)")
         else:
             ax.set_title(f"Temperature profile ({basis} initial condition)")
 
         fig.colorbar(surf, ax=ax)
 
         if save_fig:
-            os.makedirs('figures', exist_ok=True)
-            variable_name = f"temperature_profile_{basis}"
-            fig.savefig(f'figures/{variable_name}.png')
+            if error:
+                os.makedirs('figures', exist_ok=True)
+                variable_name = f"temperature_profile_error_field_{basis}"
+                fig.savefig(f'figures/{variable_name}.png')
+            else:
+                os.makedirs('figures', exist_ok=True)
+                variable_name = f"temperature_profile_{basis}"
+                fig.savefig(f'figures/{variable_name}.png')
 
         plt.show()
     
@@ -299,7 +305,7 @@ def plot_heat_equation_solution(
 
         ax.set_xlabel("Position")
 
-        if basis == "error":
+        if error:
             ax.set_ylabel("Error")
         else:
             ax.set_ylabel("Temperature")
@@ -314,8 +320,8 @@ def plot_heat_equation_solution(
             line.set_segments(segments)
             line.set_array(y)
 
-            if basis == "error":
-                ax.set_title(f"Error field (t = {time_array[frame]:.2f})")
+            if error:
+                ax.set_title(f"Temperature profile error field ({basis} initial condition, t = {time_array[frame]:.2f})")
             else:
                 ax.set_title(f"Temperature profile ({basis} initial condition, t = {time_array[frame]:.2f})")
 
@@ -324,8 +330,13 @@ def plot_heat_equation_solution(
         ani = FuncAnimation(fig, update, frames=len(time_array), interval=100, blit=False)
 
         if save_fig:
-            os.makedirs('animations', exist_ok=True)
-            variable_name = f"temperature_profile_{basis}"
-            ani.save(f'animations/{variable_name}.mp4', writer="ffmpeg")
+            if error:
+                os.makedirs('animations', exist_ok=True)
+                variable_name = f"temperature_profile_error_field_{basis}"
+                ani.save(f'animations/{variable_name}.mp4', writer="ffmpeg")
+            else:
+                os.makedirs('animations', exist_ok=True)
+                variable_name = f"temperature_profile_{basis}"
+                ani.save(f'animations/{variable_name}.mp4', writer="ffmpeg")
 
         plt.show()

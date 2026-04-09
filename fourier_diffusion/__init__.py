@@ -12,4 +12,5 @@ from .plotting import (
     plot_signals,
     plot_epicycles,
     plot_heat_equation_solution,
+    plot_validation_summary,
 )

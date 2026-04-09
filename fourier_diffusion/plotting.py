@@ -340,3 +340,178 @@ def plot_heat_equation_solution(
                 ani.save(f'animations/{variable_name}.mp4', writer="ffmpeg")
 
         plt.show()
+
+
+def plot_validation_summary(
+    x_array: np.ndarray,
+    time_array: np.ndarray,
+    analytical_solution: np.ndarray,
+    numerical_solution: np.ndarray,
+    error: np.ndarray,
+    time_index: int = -1,
+    basis: str = "periodic",
+    animate: bool = False,
+    save_fig: bool = False,
+) -> None:
+    """Plot or animate a summary figure for analytical vs numerical validation."""
+
+    fig = plt.figure(figsize=(16, 10))
+
+    ax1 = fig.add_subplot(2, 2, 1)
+    ax2 = fig.add_subplot(2, 2, 2)
+    ax3 = fig.add_subplot(2, 2, 3, projection="3d")
+    ax4 = fig.add_subplot(2, 2, 4, projection="3d")
+
+    x_grid, t_grid = np.meshgrid(x_array, time_array)
+
+    surf1 = ax3.plot_surface(
+        x_grid,
+        t_grid,
+        analytical_solution,
+        cmap=cm.coolwarm,
+        alpha=0.85,
+    )
+    surf2 = ax4.plot_surface(
+        x_grid,
+        t_grid,
+        error,
+        cmap=cm.coolwarm,
+        alpha=0.85,
+    )
+
+    fig.colorbar(surf1, ax=ax3, shrink=0.7)
+    fig.colorbar(surf2, ax=ax4, shrink=0.7)
+
+    ax3.set_title(f"Analytical solution ({basis})")
+    ax3.set_xlabel("Position")
+    ax3.set_ylabel("Time")
+    ax3.set_zlabel("Temperature")
+
+    ax4.set_title("Error surface")
+    ax4.set_xlabel("Position")
+    ax4.set_ylabel("Time")
+    ax4.set_zlabel("Error")
+
+    if not animate:
+        t_value = time_array[time_index]
+
+        analytical_slice = analytical_solution[time_index]
+        numerical_slice = numerical_solution[time_index]
+        error_slice = error[time_index]
+
+        ax1.plot(x_array, analytical_slice, label="Analytical")
+        ax1.plot(x_array, numerical_slice, linestyle="--", label="Numerical")
+        ax1.set_title(f"Analytical vs Numerical")
+        ax1.set_xlabel("Position")
+        ax1.set_ylabel("Temperature")
+        ax1.legend()
+        ax1.grid(True)
+
+        ax2.plot(x_array, error_slice)
+        ax2.set_title(f"Error")
+        ax2.set_xlabel("Position")
+        ax2.set_ylabel("Error")
+        ax2.grid(True)
+
+        ax3.plot(
+            x_array,
+            np.full_like(x_array, t_value),
+            analytical_slice,
+            color="k",
+            linewidth=2,
+        )
+        ax4.plot(
+            x_array,
+            np.full_like(x_array, t_value),
+            error_slice,
+            color="k",
+            linewidth=2,
+        )
+
+        fig.suptitle(f"Validation summary ({basis}, t = {t_value:.2f})", fontsize=16)
+        fig.subplots_adjust(top=0.90)
+
+        if save_fig:
+            os.makedirs("figures", exist_ok=True)
+            fig.savefig(f"figures/validation_summary_{basis}.png")
+
+        plt.show()
+        return
+
+    analytical_line, = ax1.plot([], [], label="Analytical")
+    numerical_line, = ax1.plot([], [], linestyle="--", label="Numerical")
+    ax1.set_xlim(x_array.min(), x_array.max())
+    ax1.set_ylim(
+        min(np.min(analytical_solution), np.min(numerical_solution)),
+        max(np.max(analytical_solution), np.max(numerical_solution)),
+    )
+    ax1.set_xlabel("Position")
+    ax1.set_ylabel("Temperature")
+    ax1.legend()
+    ax1.grid(True)
+
+    error_line, = ax2.plot([], [])
+    ax2.set_xlim(x_array.min(), x_array.max())
+    ax2.set_ylim(np.min(error), np.max(error))
+    ax2.set_xlabel("Position")
+    ax2.set_ylabel("Error")
+    ax2.grid(True)
+
+    analytical_surface_line, = ax3.plot(
+        x_array,
+        np.full_like(x_array, time_array[0]),
+        analytical_solution[0],
+        color="k",
+        linewidth=2,
+    )
+    error_surface_line, = ax4.plot(
+        x_array,
+        np.full_like(x_array, time_array[0]),
+        error[0],
+        color="k",
+        linewidth=2,
+    )
+
+    def update(frame: int):
+        t_value = time_array[frame]
+
+        analytical_slice = analytical_solution[frame]
+        numerical_slice = numerical_solution[frame]
+        error_slice = error[frame]
+
+        analytical_line.set_data(x_array, analytical_slice)
+        numerical_line.set_data(x_array, numerical_slice)
+        error_line.set_data(x_array, error_slice)
+
+        ax1.set_title(f"Analytical vs Numerical")
+        ax2.set_title(f"Error")
+
+        analytical_surface_line.set_data(x_array, np.full_like(x_array, t_value))
+        analytical_surface_line.set_3d_properties(analytical_slice)
+
+        error_surface_line.set_data(x_array, np.full_like(x_array, t_value))
+        error_surface_line.set_3d_properties(error_slice)
+
+        fig.suptitle(f"Validation summary ({basis}, t = {t_value:.2f})", fontsize=16)
+
+        return (
+            analytical_line,
+            numerical_line,
+            error_line,
+            analytical_surface_line,
+            error_surface_line,
+        )
+
+    ani = FuncAnimation(
+        fig,
+        update,
+        frames=len(time_array),
+        interval=100,
+        blit=False,
+    )
+
+    if save_fig:
+        os.makedirs("animations", exist_ok=True)
+        ani.save(f"animations/validation_summary_{basis}.mp4", writer="ffmpeg")
+
+    plt.show()

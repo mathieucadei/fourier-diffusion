@@ -13,6 +13,7 @@ from fourier_diffusion import (
     plot_signals,
     plot_epicycles,
     plot_heat_equation_solution,
+    plot_validation_summary,
 )
 
 
@@ -36,7 +37,7 @@ basis = "periodic"
 sample_index = 35
 partial_sums_index = -1
 
-save_fig = True
+save_fig = False
 
 x_array = np.linspace(x_min, x_max, num_x, endpoint=False)
 
@@ -102,12 +103,19 @@ error = compute_error(heat_equation_solution, numerical_solution)
 max_abs_error, rms_error = compute_error_metrics(error)
 
 print(f"Max absolute error: {max_abs_error:.6e}")
+
 print(f"RMS error: {rms_error:.6e}")
 
 plot_signals(x_array, signal_values, basis=basis, save_fig=save_fig)
-plot_epicycles(series_terms, sample_index=sample_index, save_fig=save_fig)
-plot_epicycles(series_terms, animate=True, save_fig=save_fig)
+
+if basis == "periodic":
+    plot_epicycles(series_terms, sample_index=sample_index, save_fig=save_fig)
+    plot_epicycles(series_terms, animate=True, save_fig=save_fig)
+else:
+    print(f"[INFO] Epicycle plot skipped for basis='{basis}' (requires 'periodic').")
+
 plot_signals(x_array, signal_values, partial_sums, basis=basis, save_fig=save_fig)
+
 plot_signals(
     x_array, 
     signal_values, 
@@ -140,5 +148,17 @@ plot_heat_equation_solution(
     basis=basis,
     error=True,
     animate=True,
+    save_fig=save_fig,
+)
+
+plot_validation_summary(
+    x_array,
+    time_array,
+    heat_equation_solution,
+    numerical_solution,
+    error,
+    time_index=-1,
+    basis=basis,
+    animate=False,
     save_fig=save_fig,
 )

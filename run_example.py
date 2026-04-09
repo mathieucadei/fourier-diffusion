@@ -84,6 +84,7 @@ plot_signals(
     basis=basis, 
     save_fig=save_fig
 )
+
 plot_heat_equation_solution(
     x_array, time_array, 
     heat_equation_solution, 

@@ -251,9 +251,16 @@ def plot_heat_equation_solution(
 
         ax.set_xlabel("Position")
         ax.set_ylabel("Time")
-        ax.set_zlabel("Temperature")
 
-        ax.set_title(f"Temperature profile ({basis} initial condition)")
+        if basis == "error":
+            ax.set_zlabel("Error")
+        else:
+            ax.set_zlabel("Temperature")
+
+        if basis == "error":
+            ax.set_title("Error field")
+        else:
+            ax.set_title(f"Temperature profile ({basis} initial condition)")
 
         fig.colorbar(surf, ax=ax)
 
@@ -291,7 +298,11 @@ def plot_heat_equation_solution(
         )
 
         ax.set_xlabel("Position")
-        ax.set_ylabel("Temperature")
+
+        if basis == "error":
+            ax.set_ylabel("Error")
+        else:
+            ax.set_ylabel("Temperature")
 
         def update(frame):
 
@@ -303,7 +314,10 @@ def plot_heat_equation_solution(
             line.set_segments(segments)
             line.set_array(y)
 
-            ax.set_title(f"Temperature profile ({basis} initial condition, t = {time_array[frame]:.2f})")
+            if basis == "error":
+                ax.set_title(f"Error field (t = {time_array[frame]:.2f})")
+            else:
+                ax.set_title(f"Temperature profile ({basis} initial condition, t = {time_array[frame]:.2f})")
 
             return line,
 

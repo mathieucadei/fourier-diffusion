@@ -16,7 +16,7 @@ def plot_signals(
     x_label: str="Position", 
     y_label: str="Amplitude", 
     basis: str="periodic", 
-    save_fig: bool=False
+    save_fig: bool=False,
 ) -> None:
     """Plot the original signal and optional Fourier reconstructions."""
 
@@ -46,7 +46,7 @@ def plot_signals(
             cmap = cm.plasma
 
             if n == 1:
-                plt.plot(x_array, series_signals[0], label="Series Signal")
+                plt.plot(x_array, np.real(series_signals[0]), label="Series Signal")
 
                 if save_fig:
                     os.makedirs('figures', exist_ok=True)
@@ -57,7 +57,7 @@ def plot_signals(
                 norm = colors.Normalize(vmin=0, vmax=n-1)  
 
                 for i, y in enumerate(series_signals):
-                    plt.plot(x_array, y, color=cmap(norm(i)))
+                    plt.plot(x_array, np.real(y), color=cmap(norm(i)))
                 
                 sm = cm.ScalarMappable(norm=norm, cmap=cmap)
                 ax = plt.gca()  # Get current axes
@@ -75,7 +75,7 @@ def plot_epicycles(
     series_terms: np.ndarray, 
     sample_index: int=25, 
     animate: bool=False, 
-    save_fig: bool=False
+    save_fig: bool=False,
 ) -> None:
     """Visualize the periodic Fourier series as epicycles."""
 
@@ -230,7 +230,7 @@ def plot_heat_equation_solution(
     heat_equation_solution: np.ndarray, 
     basis: str="periodic", 
     animate: bool=False, 
-    save_fig: bool=False
+    save_fig: bool=False,
 ) -> None:
     """Plot the analytical heat equation solution."""
 

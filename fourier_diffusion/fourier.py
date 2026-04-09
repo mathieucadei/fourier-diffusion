@@ -27,7 +27,7 @@ def compute_coefficients(
     signal_values: np.ndarray, 
     x_array: np.ndarray, 
     mode_indices: np.ndarray, 
-    basis: str="periodic"
+    basis: str="periodic",
 ) -> np.ndarray:
     """Compute Fourier coefficients from a sampled signal."""
 
@@ -55,7 +55,7 @@ def compute_series_terms(
     mode_indices: np.ndarray, 
     coefficients: np.ndarray, 
     x_array: np.ndarray, 
-    basis: str="periodic"
+    basis: str="periodic",
 ) -> np.ndarray:
     """Compute the contribution of each mode at each x value."""
 

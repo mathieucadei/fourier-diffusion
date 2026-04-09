@@ -6,7 +6,7 @@ def compute_heat_equation_solution(
     mode_indices: np.ndarray, 
     time_array: np.ndarray, 
     nu: float, 
-    basis: str="periodic"
+    basis: str="periodic",
 ) -> np.ndarray:
     """Compute the analytical heat equation solution from Fourier modes."""
     

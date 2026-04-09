@@ -6,7 +6,7 @@ def generate_signal(
     x_start: float=0, 
     x_end: float=0.5, 
     amplitude_min: float=-1, 
-    amplitude_max: float=1
+    amplitude_max: float=1,
 ) -> np.ndarray:
     """Generate a piecewise constant signal defined on the interval [0, 1)."""
 

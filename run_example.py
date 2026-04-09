@@ -23,7 +23,6 @@ num_x = 201
 
 t_min = 0.0
 t_max = 10.0
-num_t = 1001
 
 x_start = 0.0
 x_end = 0.5
@@ -50,7 +49,7 @@ num_time_steps = int((t_max - t_min) / dt) + 1
 time_array_num = np.linspace(t_min, t_max, num_time_steps)
 
 num_output_times = 101
-time_array = np.linspace(t_min, t_max, num_output_times)
+time_array_out = np.linspace(t_min, t_max, num_output_times)
 
 signal_values = generate_signal(
     x_array, 
@@ -81,7 +80,7 @@ partial_sums = compute_series(series_terms)
 heat_equation_solution = compute_heat_equation_solution(
     series_terms, 
     mode_indices, 
-    time_array, 
+    time_array_out, 
     nu, 
     basis=basis,
 )
@@ -125,7 +124,7 @@ plot_signals(
 )
 
 plot_heat_equation_solution(
-    x_array, time_array, 
+    x_array, time_array_out, 
     heat_equation_solution, 
     basis=basis, 
     animate=False, 
@@ -134,7 +133,7 @@ plot_heat_equation_solution(
 
 plot_heat_equation_solution(
     x_array, 
-    time_array, 
+    time_array_out, 
     heat_equation_solution, 
     basis=basis, 
     animate=True, 
@@ -143,7 +142,17 @@ plot_heat_equation_solution(
 
 plot_heat_equation_solution(
     x_array,
-    time_array,
+    time_array_out,
+    error,
+    basis=basis,
+    error=True,
+    animate=False,
+    save_fig=save_fig,
+)
+
+plot_heat_equation_solution(
+    x_array,
+    time_array_out,
     error,
     basis=basis,
     error=True,
@@ -153,12 +162,24 @@ plot_heat_equation_solution(
 
 plot_validation_summary(
     x_array,
-    time_array,
+    time_array_out,
     heat_equation_solution,
     numerical_solution,
     error,
     time_index=-1,
     basis=basis,
     animate=False,
+    save_fig=save_fig,
+)
+
+plot_validation_summary(
+    x_array,
+    time_array_out,
+    heat_equation_solution,
+    numerical_solution,
+    error,
+    time_index=-1,
+    basis=basis,
+    animate=True,
     save_fig=save_fig,
 )

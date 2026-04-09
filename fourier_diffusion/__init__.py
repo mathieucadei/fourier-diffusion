@@ -6,6 +6,8 @@ from .fourier import (
     compute_series,
 )
 from .diffusion import compute_heat_equation_solution
+from .numerical import solve_heat_equation_explicit
+from .validation import compute_error, compute_error_metrics
 from .plotting import (
     plot_signals,
     plot_epicycles,

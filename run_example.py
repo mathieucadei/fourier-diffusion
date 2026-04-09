@@ -7,12 +7,13 @@ from fourier_diffusion import (
     compute_series_terms,
     compute_series,
     compute_heat_equation_solution,
+    solve_heat_equation_explicit,
+    compute_error,
+    compute_error_metrics,
     plot_signals,
     plot_epicycles,
     plot_heat_equation_solution,
 )
-
-from fourier_diffusion.numerical import solve_heat_equation_explicit
 
 
 x_min = 0.0
@@ -95,6 +96,12 @@ numerical_solution_full = solve_heat_equation_explicit(
 output_indices = np.linspace(0, len(time_array_num) - 1, num_output_times, dtype=int)
 
 numerical_solution = numerical_solution_full[output_indices]
+
+error = compute_error(heat_equation_solution, numerical_solution)
+max_abs_error, rms_error = compute_error_metrics(error)
+
+print(f"Max absolute error: {max_abs_error:.6e}")
+print(f"RMS error: {rms_error:.6e}")
 
 plot_signals(x_array, signal_values, basis=basis, save_fig=save_fig)
 plot_epicycles(series_terms, sample_index=sample_index, save_fig=save_fig)

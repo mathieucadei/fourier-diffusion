@@ -10,6 +10,10 @@ Small Python project for Fourier series visualization and analytical heat equati
 - compute analytical diffusion solutions
 - visualize signals, epicycles, and temperature evolution
 
+## Validation
+
+This project includes a comparison between analytical Fourier-based solutions and a numerical finite-difference solver for the heat equation, with error quantification and visualization.
+
 ## Run
 
 ```bash

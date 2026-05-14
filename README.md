@@ -1,4 +1,4 @@
-# fourier_diffusion
+# Fourier Diffusion
 
 Small Python project for Fourier-based analytical solutions and numerical validation of the 1D heat (diffusion) equation.
 

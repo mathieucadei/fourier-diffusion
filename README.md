@@ -2,6 +2,16 @@
 
 Small Python project for Fourier-based analytical solutions and numerical validation of the 1D heat (diffusion) equation.
 
+![Validation summary animation](docs/validation_summary_periodic.gif)
+
+Analytical Fourier solution and finite-difference validation evolving over time.
+
+## Fourier reconstruction
+
+![Fourier epicycles animation](docs/epicycles.gif)
+
+Fourier modes represented as rotating complex vectors that reconstruct the periodic signal.
+
 ## Current scope
 
 - build simple 1D signals
